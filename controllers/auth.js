@@ -1,7 +1,9 @@
 const { response, request } = require('express');
 const bcrypt = require('bcryptjs');
 const Usuario = require('../models/usuarios');
+console.log('Usuario model:', Usuario); // Depuración
 const { generarJWT } = require('../helpers/generar-jwt');
+
 
 const login = async (req = request, res = response) => {
 	const { correo, password } = req.body;
@@ -47,6 +49,28 @@ const login = async (req = request, res = response) => {
 	}
 };
 
+const register = async (req, res) => {
+	console.log('Solicitud a /register recibida');
+	const { nombre, apellido, correo, password, rol, telefono, plan } = req.body;
+	try {
+		const hashedPassword = await bcrypt.hash(password, 10);
+		const usuario = new Usuario({
+			nombre,
+			apellido,
+			correo,
+			password: hashedPassword,
+			rol,
+			telefono,
+			plan,
+		});
+		await usuario.save();
+		res.status(201).json({ message: 'Usuario registrado' });
+	} catch (error) {
+		console.error('Error en /register:', error);
+		res.status(400).json({ error: error.message });
+	}
+};
+
 module.exports = {
-	login,
+	login, register 
 };

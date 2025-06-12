@@ -9,10 +9,11 @@ class Server {
 		// Rutas de la aplicación
 		this.authPath = '/api/auth';
 		this.usuariosPath = '/api/usuarios';
-		// this.clasesPath = '/api/clases';
+		this.turnosPath = '/api/turnos'; /* NUEVO */
+		this.clasesPath = '/api/clases';
 
 		//Conectar con Base de datos
-		this.conectarDB();
+		/* this.conectarDB(); */
 
 		//Middlewares
 		this.middlewares();
@@ -41,11 +42,15 @@ class Server {
 	}
 
 	routes() {
+		console.log('Cargando rutas en server.js'); // Depuración
 		this.app.use(this.usuariosPath, require('../routes/usuarios'));
 		this.app.use(this.authPath, require('../routes/auth'));
+		this.app.use(this.clasesPath, require('../routes/clases'));
+		this.app.use(this.turnosPath, require('../routes/turnos')); /* NUEVO */
 	}
 
 	listen() {
+		this.conectarDB();
 		this.app.listen(this.port, () => {
 			console.log(`🚀 Servidor corriendo en http://localhost:${this.port}`);
 		});

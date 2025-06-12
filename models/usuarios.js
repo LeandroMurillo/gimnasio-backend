@@ -7,6 +7,8 @@ const UsuarioSchema = Schema({
 	password: { type: String, required: [true, 'La contraseña es obligatoria'] },
 	img: { type: String },
 	rol: { type: String, required: true },
+	telefono: { type: String }, // Agregado
+    plan: { type: String, enum: ['musculacion', 'clases', 'full'] }, // Agregado
 	fechaRegistro: { type: Date, default: Date.now },
 	estado: { type: Boolean, default: true },
 });
