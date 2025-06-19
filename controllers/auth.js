@@ -9,21 +9,18 @@ const login = async (req = request, res = response) => {
 	try {
 		const usuario = await Usuario.findOne({ correo });
 
-		//Verificar si el correo existe
 		if (!usuario) {
 			return res.status(400).json({
 				msg: 'Correo o password incorrectos | usuario inexistente',
 			});
 		}
 
-		//Verificar si el usuario está activo
 		if (!usuario.estado) {
 			return res.status(400).json({
 				msg: 'Correo o password incorrectos | usuario inactivo',
 			});
 		}
 
-		//Verificar la contraseña
 		const validPassword = bcrypt.compareSync(password, usuario.password);
 		if (!validPassword) {
 			return res.status(400).json({
@@ -31,7 +28,6 @@ const login = async (req = request, res = response) => {
 			});
 		}
 
-		//Generar el token
 		const token = await generarJWT(usuario.id);
 
 		res.json({

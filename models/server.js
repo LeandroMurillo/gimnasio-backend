@@ -2,22 +2,31 @@ const express = require('express');
 const cors = require('cors');
 const { dbConnection } = require('../database/config');
 
+require('../models/categoria');
+require('../models/planes');
+require('../models/usuarios');
+require('../models/clases');
+require('../models/asistencias');
+
 class Server {
 	constructor() {
 		this.app = express();
 		this.port = process.env.PORT || 3000;
-		// Rutas de la aplicación
+
 		this.authPath = '/api/auth';
 		this.usuariosPath = '/api/usuarios';
-		// this.clasesPath = '/api/clases';
+		this.categoriasPath = '/api/categorias';
+		this.clasesPath = '/api/clases';
+		this.planesPath = '/api/planes';
+		this.pagosPath = '/api/pagos';
 
-		//Conectar con Base de datos
+		// Conectar con la base de datos
 		this.conectarDB();
 
-		//Middlewares
+		// Middlewares
 		this.middlewares();
 
-		//Función para las rutas
+		// Definir rutas
 		this.routes();
 	}
 
@@ -26,28 +35,28 @@ class Server {
 	}
 
 	middlewares() {
-		//CORS
-		/*  this.app.use(cors({
-            origin: 'https://tu-frontend.netlify.app',
-            credentials: true // necesario para que mande cookies
-        })); */
+		// CORS
 		this.app.use(cors());
 
-		//Leer lo que el usuario envía por el cuerpo de la petición
+		// Parseo de body JSON
 		this.app.use(express.json());
 
-		//Definir la carpeta pública
+		// Carpeta pública
 		this.app.use(express.static('public'));
 	}
 
 	routes() {
 		this.app.use(this.usuariosPath, require('../routes/usuarios'));
 		this.app.use(this.authPath, require('../routes/auth'));
+		this.app.use(this.categoriasPath, require('../routes/categorias'));
+		this.app.use(this.planesPath, require('../routes/planes'));
+		this.app.use(this.pagosPath, require('../routes/pagos'));
+		this.app.use(this.clasesPath, require('../routes/clases'));
 	}
 
 	listen() {
 		this.app.listen(this.port, () => {
-			console.log(`🚀 Servidor corriendo en http://localhost:${this.port}`);
+			console.log(`Servidor corriendo en http://localhost:${this.port}`);
 		});
 	}
 }
