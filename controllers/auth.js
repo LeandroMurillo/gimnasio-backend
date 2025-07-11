@@ -30,9 +30,15 @@ const login = async (req = request, res = response) => {
 
 		const token = await generarJWT(usuario.id);
 
+		// Crear objeto de respuesta sin password ni __v
+		const { _id, nombre, apellido, correo: email, rol } = usuario;
+
 		res.json({
-			msg: 'Login Ok',
-			usuario,
+			_id,
+			nombre,
+			apellido,
+			email,
+			rol,
 			token,
 		});
 	} catch (error) {

@@ -8,15 +8,16 @@ const argv = require('minimist')(process.argv.slice(2));
 
 function sinTildes(str) {
 	return str
-		.normalize('NFD') 
-		.replace(/[\u0300-\u036f]/g, '') 
+		.normalize('NFD')
+		.replace(/[\u0300-\u036f]/g, '')
 		.replace(/\s+/g, '')
 		.toLowerCase();
 }
 
 /* ==== Models ==== */
+const Configuracion = require('../models/configuracion');
 const Usuario = require('../models/usuarios');
-const Categoria = require('../models/categorias');
+const Categoria = require('../models/categoria');
 const Plan = require('../models/planes');
 const Clase = require('../models/clases');
 const Asistencia = require('../models/asistencias');
@@ -68,7 +69,7 @@ const CLASES_TOTAL = argv.clases || 60;
 		nombre: 'Admin',
 		apellido: 'Root',
 		correo: 'admin@gimnasiorolling.com',
-		rol: 'ADMIN',
+		rol: 'admin',
 		password: bcrypt.hashSync('123456', salt),
 	});
 
@@ -82,7 +83,7 @@ const CLASES_TOTAL = argv.clases || 60;
 				nombre: nombres,
 				apellido: apellidos,
 				correo: `${nomKey}.${apeKey}@gimnasiorolling.com`,
-				rol: 'INSTRUCTOR',
+				rol: 'instructor',
 				password: bcrypt.hashSync('123456', salt),
 			};
 		}),
@@ -98,7 +99,7 @@ const CLASES_TOTAL = argv.clases || 60;
 				nombre: nombres,
 				apellido: apellidos,
 				correo: `${nomKey}.${apeKey}@gimnasiorolling.com`,
-				rol: 'SOCIO',
+				rol: 'usuario',
 				password: bcrypt.hashSync('123456', salt),
 			};
 		}),
@@ -111,10 +112,10 @@ const CLASES_TOTAL = argv.clases || 60;
 	const clases = await Clase.insertMany(
 		Array.from({ length: CLASES_TOTAL }).map(() => {
 			const dia = faker.number.int({ min: 1, max: 28 });
-			const hora = faker.number.int({ min: 6, max: 21 });
+			const hora = faker.number.int({ min: 6, max: 20 });
 			const fechaInicio = new Date(startMonth.getFullYear(), startMonth.getMonth(), dia, hora);
 			const fechaFin = new Date(fechaInicio);
-			fechaFin.setHours(fechaInicio.getHours() + 1);
+			fechaFin.setHours(fechaInicio.getHours() + 2);
 
 			return {
 				nombre: faker.company.catchPhrase(),
@@ -153,6 +154,24 @@ const CLASES_TOTAL = argv.clases || 60;
 		})),
 	);
 
+	/* 8. Configuración del gimnasio */
+	await Configuracion.deleteMany({}); // por si ya existía
+	await Configuracion.create({
+		nombre: 'Gimnasio Rolling',
+		direccion: 'Av. Fitness 123',
+		ciudad: 'San Miguel de Tucumán',
+		email: 'gimnasio_rolling@gmail.com',
+		telefono: '(011) 1234 5678',
+		whatsapp: '+54 9 11 1111 1111',
+		redes: {
+			facebook: 'https://facebook.com/gimnasiorolling',
+			instagram: 'https://instagram.com/gimnasiorolling',
+		},
+		ubicacion: {
+			iframeSrc: 'https://www.google.com/maps/embed?pb=...',
+		},
+	});
+
 	const dumpDir = path.join(__dirname, 'dump');
 	if (!fs.existsSync(dumpDir)) fs.mkdirSync(dumpDir);
 
@@ -178,13 +197,15 @@ const CLASES_TOTAL = argv.clases || 60;
 })();
 
 async function exportAll() {
-	const [usuarios, categorias, planes, clases, asistencias, pagos] = await Promise.all([
-		Usuario.find().lean(),
-		Categoria.find().lean(),
-		Plan.find().lean(),
-		Clase.find().lean(),
-		Asistencia.find().lean(),
-		Pago.find().lean(),
-	]);
-	return { usuarios, categorias, planes, clases, asistencias, pagos };
+	const [usuarios, categorias, planes, clases, asistencias, pagos, configuracion] =
+		await Promise.all([
+			Usuario.find().lean(),
+			Categoria.find().lean(),
+			Plan.find().lean(),
+			Clase.find().lean(),
+			Asistencia.find().lean(),
+			Pago.find().lean(),
+			Configuracion.find().lean(), // 👈 nuevo
+		]);
+	return { usuarios, categorias, planes, clases, asistencias, pagos, configuracion };
 }

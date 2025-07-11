@@ -2,41 +2,74 @@ const Clase = require('../models/clases');
 const Asistencia = require('../models/asistencias');
 
 exports.obtenerClases = async (req, res) => {
-	const { start, end } = req.query;
+	const { start, end, _start, _end } = req.query;
+
+	// Si no se pasan fechas, se asume uso desde React-Admin
 	if (!start || !end) {
-		return res.status(400).json({ msg: 'start y end requeridos' });
+		try {
+			const startIdx = parseInt(_start) || 0;
+			const endIdx = parseInt(_end) || 10;
+
+			const total = await Clase.countDocuments();
+			const clases = await Clase.find()
+				.skip(startIdx)
+				.limit(endIdx - startIdx)
+				.lean();
+
+			// 🛠️ Convertimos _id en id
+			const clasesConId = clases.map((clase) => ({
+				...clase,
+				id: clase._id.toString(), // importante para React-Admin
+			}));
+
+			// Headers para paginación
+			res.set('Content-Range', `clases ${startIdx}-${endIdx - 1}/${total}`);
+			res.set('Access-Control-Expose-Headers', 'Content-Range');
+
+			return res.json(clasesConId); // ✅ Compatible con simpleRestProvider
+		} catch (error) {
+			console.error('Error al obtener clases:', error);
+			return res.status(500).json({ msg: 'Error interno al obtener clases' });
+		}
 	}
 
-	const clases = await Clase.find({
-		fechaInicio: { $lt: new Date(end) },
-		fechaFin: { $gt: new Date(start) },
-	})
-		.populate('categoria', 'nombre color')
-		.populate('instructor', 'nombre apellido')
-		.lean();
+	// Si se pasan fechas, devolver filtradas para el calendario
+	try {
+		const clases = await Clase.find({
+			fechaInicio: { $lt: new Date(end) },
+			fechaFin: { $gt: new Date(start) },
+		})
+			.populate('categoria', 'nombre color')
+			.populate('instructor', 'nombre apellido')
+			.lean();
 
-	const counts = await Asistencia.aggregate([
-		{ $match: { clase: { $in: clases.map((c) => c._id) } } },
-		{ $group: { _id: '$clase', total: { $sum: 1 } } },
-	]);
-	const countMap = Object.fromEntries(counts.map((c) => [c._id.toString(), c.total]));
+		const counts = await Asistencia.aggregate([
+			{ $match: { clase: { $in: clases.map((c) => c._id) } } },
+			{ $group: { _id: '$clase', total: { $sum: 1 } } },
+		]);
 
-	const eventos = clases.map((c) => ({
-		id: c._id.toString(),
-		title: c.nombre,
-		start: c.fechaInicio,
-		end: c.fechaFin,
-		backgroundColor: c.categoria?.color ?? '#0d6efd',
-		extendedProps: {
-			cupoMax: c.cupoMax,
-			asistentes: countMap[c._id.toString()] ?? 0,
-			planesPermitidos: c.planesPermitidos,
-			instructor: c.instructor,
-			categoria: c.categoria,
-		},
-	}));
+		const countMap = Object.fromEntries(counts.map((c) => [c._id.toString(), c.total]));
 
-	res.json(eventos);
+		const eventos = clases.map((c) => ({
+			id: c._id.toString(),
+			title: c.nombre,
+			start: c.fechaInicio,
+			end: c.fechaFin,
+			backgroundColor: c.categoria?.color ?? '#0d6efd',
+			extendedProps: {
+				cupoMax: c.cupoMax,
+				asistentes: countMap[c._id.toString()] ?? 0,
+				planesPermitidos: c.planesPermitidos,
+				instructor: c.instructor,
+				categoria: c.categoria,
+			},
+		}));
+
+		res.json(eventos);
+	} catch (error) {
+		console.error('Error al obtener clases filtradas:', error);
+		return res.status(500).json({ msg: 'Error al obtener clases con fechas' });
+	}
 };
 
 exports.crearClase = async (req, res) => {
@@ -61,9 +94,13 @@ exports.actualizarClase = async (req, res) => {
 };
 
 exports.eliminarClase = async (req, res) => {
-	await Clase.findByIdAndDelete(req.params.id);
-	await Asistencia.deleteMany({ clase: req.params.id });
-	res.status(204).end();
+	try {
+		await Clase.findByIdAndDelete(req.params.id);
+		await Asistencia.deleteMany({ clase: req.params.id });
+		res.status(204).end();
+	} catch (err) {
+		res.status(400).json({ msg: 'Error al eliminar clase', err });
+	}
 };
 
 exports.obtenerClasesCards = async (req, res) => {

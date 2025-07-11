@@ -7,7 +7,7 @@ const format = (argv.format || 'json').toLowerCase();
 
 const models = {
 	usuarios: require('../models/usuarios'),
-	categorias: require('../models/categorias'),
+	categoria: require('../models/categoria'),
 	planes: require('../models/planes'),
 	clases: require('../models/clases'),
 	asistencias: require('../models/asistencias'),
