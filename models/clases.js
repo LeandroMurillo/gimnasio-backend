@@ -6,17 +6,8 @@ const ClaseSchema = new Schema(
 			type: String,
 			required: true,
 		},
-		descripcion: {
+		color: {
 			type: String,
-			required: false,
-		},
-		imagenUrl: {
-			type: String,
-			required: false,
-		},
-		categoria: {
-			type: Types.ObjectId,
-			ref: 'Categoria',
 			required: true,
 		},
 		instructor: {
@@ -36,13 +27,6 @@ const ClaseSchema = new Schema(
 			type: Number,
 			required: true,
 		},
-		planesPermitidos: [
-			{
-				type: Types.ObjectId,
-				ref: 'Plan',
-				required: true,
-			},
-		],
 	},
 	{
 		timestamps: true,

@@ -1,10 +1,12 @@
 const Clase = require('../models/clases');
 const Asistencia = require('../models/asistencias');
+const Pago = require('../models/pagos');
+const Usuario = require('../models/usuarios');
+const Plan = require('../models/planes');
 
 exports.obtenerClases = async (req, res) => {
 	const { start, end, _start, _end } = req.query;
 
-	// Si no se pasan fechas, se asume uso desde React-Admin
 	if (!start || !end) {
 		try {
 			const startIdx = parseInt(_start) || 0;
@@ -14,32 +16,29 @@ exports.obtenerClases = async (req, res) => {
 			const clases = await Clase.find()
 				.skip(startIdx)
 				.limit(endIdx - startIdx)
+				.populate('instructor', 'nombre apellido')
 				.lean();
 
-			// 🛠️ Convertimos _id en id
 			const clasesConId = clases.map((clase) => ({
 				...clase,
-				id: clase._id.toString(), // importante para React-Admin
+				id: clase._id.toString(),
 			}));
 
-			// Headers para paginación
 			res.set('Content-Range', `clases ${startIdx}-${endIdx - 1}/${total}`);
 			res.set('Access-Control-Expose-Headers', 'Content-Range');
 
-			return res.json(clasesConId); // ✅ Compatible con simpleRestProvider
+			return res.json(clasesConId);
 		} catch (error) {
 			console.error('Error al obtener clases:', error);
 			return res.status(500).json({ msg: 'Error interno al obtener clases' });
 		}
 	}
 
-	// Si se pasan fechas, devolver filtradas para el calendario
 	try {
 		const clases = await Clase.find({
 			fechaInicio: { $lt: new Date(end) },
 			fechaFin: { $gt: new Date(start) },
 		})
-			.populate('categoria', 'nombre color')
 			.populate('instructor', 'nombre apellido')
 			.lean();
 
@@ -55,13 +54,11 @@ exports.obtenerClases = async (req, res) => {
 			title: c.nombre,
 			start: c.fechaInicio,
 			end: c.fechaFin,
-			backgroundColor: c.categoria?.color ?? '#0d6efd',
+			backgroundColor: c.color ?? '#0d6efd',
 			extendedProps: {
 				cupoMax: c.cupoMax,
 				asistentes: countMap[c._id.toString()] ?? 0,
-				planesPermitidos: c.planesPermitidos,
 				instructor: c.instructor,
-				categoria: c.categoria,
 			},
 		}));
 
@@ -69,6 +66,25 @@ exports.obtenerClases = async (req, res) => {
 	} catch (error) {
 		console.error('Error al obtener clases filtradas:', error);
 		return res.status(500).json({ msg: 'Error al obtener clases con fechas' });
+	}
+};
+
+exports.obtenerClasePorId = async (req, res) => {
+	try {
+		const { id } = req.params;
+		const clase = await Clase.findById(id).populate('instructor', 'nombre apellido');
+
+		if (!clase) {
+			return res.status(404).json({ msg: 'Clase no encontrada' });
+		}
+
+		const claseObj = clase.toObject();
+		claseObj.id = clase._id.toString();
+
+		res.json(claseObj);
+	} catch (err) {
+		console.error('Error al obtener clase por ID:', err);
+		res.status(500).json({ msg: 'Error al obtener la clase' });
 	}
 };
 
@@ -105,21 +121,59 @@ exports.eliminarClase = async (req, res) => {
 
 exports.obtenerClasesCards = async (req, res) => {
 	try {
-		const clases = await Clase.find({}, 'nombre descripcion imagenUrl')
-			.sort({ createdAt: -1 })
-			.limit(3)
-			.lean();
+		const clases = await Clase.find({}, 'nombre').sort({ createdAt: -1 }).limit(3).lean();
 
 		const resultado = clases.map((c) => ({
 			id: c._id.toString(),
 			nombre: c.nombre,
-			descripcion: c.descripcion,
-			imagenUrl: c.imagenUrl,
 		}));
 
 		return res.json(resultado);
 	} catch (err) {
 		console.error(err);
 		return res.status(500).json({ msg: 'Error al obtener datos de tarjetas' });
+	}
+};
+
+exports.obtenerAsistentesDeClase = async (req, res) => {
+	const { id } = req.params;
+
+	try {
+		const asistencias = await Asistencia.find({ clase: id }).populate('usuario');
+
+		const pagos = await Pago.find({
+			usuario: { $in: asistencias.map((a) => a.usuario._id) },
+			status: 'approved',
+		})
+			.sort({ captured_at: -1 })
+			.lean();
+
+		const planPorUsuario = {};
+		for (const pago of pagos) {
+			if (!planPorUsuario[pago.usuario.toString()]) {
+				planPorUsuario[pago.usuario.toString()] = pago.plan;
+			}
+		}
+
+		const planes = await Plan.find({
+			_id: { $in: Object.values(planPorUsuario) },
+		}).lean();
+
+		const planInfo = Object.fromEntries(planes.map((p) => [p._id.toString(), p.nombre]));
+
+		const resultado = asistencias.map((a) => ({
+			id: a._id.toString(),
+			nombre: a.usuario.nombre,
+			apellido: a.usuario.apellido,
+			email: a.usuario.correo,
+			plan: {
+				nombre: planInfo[planPorUsuario[a.usuario._id.toString()]] ?? 'Sin plan',
+			},
+		}));
+
+		res.json(resultado);
+	} catch (err) {
+		console.error('Error al obtener asistentes:', err);
+		res.status(500).json({ msg: 'Error al obtener asistentes de la clase' });
 	}
 };

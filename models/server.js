@@ -21,6 +21,7 @@ class Server {
 		this.pagosPath = '/api/pagos';
 		this.mensajesPath = '/api/mensajes';
 		this.configuracionPath = '/api/configuracion';
+		this.asistenciasPath = '/api/asistencias';
 
 		// Conectar con la base de datos
 		this.conectarDB();
@@ -56,6 +57,7 @@ class Server {
 		this.app.use(this.clasesPath, require('../routes/clases'));
 		this.app.use(this.mensajesPath, require('../routes/mensajes'));
 		this.app.use(this.configuracionPath, require('../routes/configuracion'));
+		this.app.use(this.asistenciasPath, require('../routes/asistencias'));
 	}
 
 	listen() {

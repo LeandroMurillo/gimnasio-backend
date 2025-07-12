@@ -3,7 +3,9 @@ const jwt = require('jsonwebtoken');
 const Usuario = require('../models/usuarios');
 
 const validarJWT = async (req = request, res = response, next) => {
-	const token = req.header('x-token');
+	// Tomar el token desde el header estándar Authorization
+	const authHeader = req.header('Authorization');
+	const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
 
 	if (!token) {
 		return res.status(401).json({
@@ -29,7 +31,6 @@ const validarJWT = async (req = request, res = response, next) => {
 		}
 
 		req.usuario = usuario;
-
 		next();
 	} catch (error) {
 		console.log(error);

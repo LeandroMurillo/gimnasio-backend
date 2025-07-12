@@ -8,6 +8,11 @@ const UsuarioSchema = Schema({
 	img: { type: String },
 	rol: { type: String, required: true },
 	fechaRegistro: { type: Date, default: Date.now },
+	plan: {
+		type: Schema.Types.ObjectId,
+		ref: 'Plan',
+		default: null,
+	},
 	estado: { type: Boolean, default: true },
 });
 

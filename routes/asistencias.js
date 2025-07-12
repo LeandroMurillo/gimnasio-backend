@@ -1,7 +1,9 @@
 const { Router } = require('express');
-const validarJWT = require('../middlewares/validar-jwt');
-const ctrl = require('../controllers/asistencia');
+const { registrarAsistencia } = require('../controllers/asistencias');
+const { validarJWT } = require('../middlewares/validar-jwt');
 
 const router = Router();
-router.post('/', validarJWT, ctrl.inscribirse);
+
+router.post('/', validarJWT, registrarAsistencia);
+
 module.exports = router;
