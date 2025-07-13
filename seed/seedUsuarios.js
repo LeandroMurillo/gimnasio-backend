@@ -10,7 +10,7 @@ function sinTildes(str) {
 		.toLowerCase();
 }
 
-module.exports = async function seedUsuarios(USERS_TOTAL, INSTRUCTORES_TOT, planes) {
+module.exports = async function seedUsuarios(USERS_TOTAL, _INSTRUCTORES_TOT, planes) {
 	const salt = bcrypt.genSaltSync(10);
 
 	// Función para generar un número de teléfono válido
@@ -30,23 +30,39 @@ module.exports = async function seedUsuarios(USERS_TOTAL, INSTRUCTORES_TOT, plan
 		password: bcrypt.hashSync('123456', salt),
 	});
 
-	// Crear instructores
-	const instructores = await Usuario.insertMany(
-		Array.from({ length: INSTRUCTORES_TOT }).map(() => {
-			const nombres = faker.person.firstName();
-			const apellidos = faker.person.lastName();
-			const nomKey = sinTildes(nombres);
-			const apeKey = sinTildes(apellidos);
-			return {
-				nombre: nombres,
-				apellido: apellidos,
-				correo: `${nomKey}.${apeKey}@gimnasiorolling.com`,
-				telefono: generarTelefonoValido(),
-				rol: 'instructor',
-				password: bcrypt.hashSync('123456', salt),
-			};
-		}),
-	);
+	// Crear 3 instructores específicos
+	const instructores = await Usuario.insertMany([
+		{
+			nombre: 'Juan',
+			apellido: 'Villagra',
+			correo: 'juan.villagra@gimnasiorolling.com',
+			telefono: generarTelefonoValido(),
+			rol: 'instructor',
+			password: bcrypt.hashSync('123456', salt),
+			img: '/public/juan_villagra_photo.jpg',
+			descripcion: 'Licenciado en nutrición y entrenador con orientación deportiva.',
+		},
+		{
+			nombre: 'Camila',
+			apellido: 'Delgado',
+			correo: 'camila.delgado@gimnasiorolling.com',
+			telefono: generarTelefonoValido(),
+			rol: 'instructor',
+			password: bcrypt.hashSync('123456', salt),
+			img: '/public/camila_delgado_photo.jpg',
+			descripcion: 'Preparadora Física y Entrenadora Personal titulada del ENADE.',
+		},
+		{
+			nombre: 'Facundo',
+			apellido: 'Gómez',
+			correo: 'facundo.gomez@gimnasiorolling.com',
+			telefono: generarTelefonoValido(),
+			rol: 'instructor',
+			password: bcrypt.hashSync('123456', salt),
+			img: '/public/facundo_gomez_photo.jpg',
+			descripcion: 'Profesor en Educación Física y Entrenamiento personalizado.',
+		},
+	]);
 
 	// Crear socios aleatorios sin plan
 	const socios = await Usuario.insertMany(

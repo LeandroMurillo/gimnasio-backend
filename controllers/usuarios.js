@@ -144,10 +144,33 @@ const usuarioDelete = async (req = request, res = response) => {
 	}
 };
 
+// Nueva función para obtener instructores
+const obtenerInstructores = async (req = request, res = response) => {
+	try {
+		// Filtrar por rol 'instructor'
+		const instructores = await Usuario.find({ rol: 'instructor', estado: true });
+
+		// Mapear los instructores y eliminar campos innecesarios
+		const instructoresList = instructores.map((instructor) => {
+			const obj = instructor.toObject();
+			obj.id = obj._id;
+			delete obj._id;
+			delete obj.password;
+			return obj;
+		});
+
+		res.json(instructoresList);
+	} catch (err) {
+		console.error('Error al obtener instructores:', err);
+		res.status(500).json({ error: 'Error interno al obtener instructores' });
+	}
+};
+
 module.exports = {
 	usuarioGet,
 	usuarioGetID,
 	usuarioPost,
 	usuarioPut,
 	usuarioDelete,
+	obtenerInstructores, // Aseguramos que esté exportado
 };

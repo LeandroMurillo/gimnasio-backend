@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const { dbConnection } = require('../database/config');
 
 require('../models/categoria');
@@ -45,7 +46,7 @@ class Server {
 		this.app.use(express.json());
 
 		// Carpeta pública
-		this.app.use(express.static('public'));
+		this.app.use('/public', express.static(path.join(__dirname, '../public')));
 	}
 
 	routes() {
