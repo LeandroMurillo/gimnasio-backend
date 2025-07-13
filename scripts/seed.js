@@ -3,7 +3,6 @@ const mongoose = require('mongoose');
 const { faker } = require('@faker-js/faker/locale/es');
 const bcrypt = require('bcryptjs');
 
-/* ==== Models ==== */
 const Configuracion = require('../models/configuracion');
 const Usuario = require('../models/usuarios');
 const Plan = require('../models/planes');
@@ -11,7 +10,6 @@ const Clase = require('../models/clases');
 const Asistencia = require('../models/asistencias');
 const Pago = require('../models/pagos');
 
-/* ==== CLI params ==== */
 const argv = require('minimist')(process.argv.slice(2));
 const USERS_TOTAL = argv.usuarios || 50;
 const INSTRUCTORES_TOT = argv.instructores || 3;
@@ -29,7 +27,6 @@ function sinTildes(str) {
 	await mongoose.connect(process.env.MONGODB_CNN);
 	console.log('💾  DB conectada');
 
-	// 1. Limpiar
 	await Promise.all([
 		Usuario.deleteMany({}),
 		Plan.deleteMany({}),
@@ -38,17 +35,31 @@ function sinTildes(str) {
 		Pago.deleteMany({}),
 	]);
 
-	// 2. Planes
-	const planes = await Plan.insertMany(
-		['musculación', 'clases', 'full'].map((nombre, i) => ({
-			nombre,
-			descripcion: faker.commerce.productDescription(),
-			precio: (i + 1) * 4000,
+	// === PLANES ACTUALIZADOS ===
+	const planes = await Plan.insertMany([
+		{
+			nombre: 'Plan Musculación',
+			descripcion:
+				'Accedé sin límites a nuestra sala de pesas y máquinas de última generación. Ideal para quienes entrenan de forma autónoma, con rutinas personalizadas o asesoramiento básico de nuestros instructores. Incluye vestuarios con duchas, lockers personales y acceso a turnos flexibles. ¡Entrená a tu ritmo, sin distracciones!',
+			precio: 4000,
 			duracionMeses: 1,
-		})),
-	);
+		},
+		{
+			nombre: 'Plan Clases Ilimitadas',
+			descripcion:
+				'Disfrutá de todas nuestras clases grupales sin restricciones: Fit Dance, Zumba, Spinning, Funcional, Yoga, Ritmos, GAP y más. Entrenamientos energizantes guiados por profesionales, pensados para todos los niveles. Incluye reserva online, acceso a vestuarios y seguimiento de progreso. ¡Motivate con el grupo y superate día a día!',
+			precio: 5000,
+			duracionMeses: 1,
+		},
+		{
+			nombre: 'Plan Full Access',
+			descripcion:
+				'Combiná lo mejor de ambos mundos: acceso total a la sala de musculación y participación ilimitada en todas las clases grupales. Entrená cuando y como quieras, con soporte integral de nuestro equipo. Este plan incluye turnos libres, lockers, vestuarios y prioridad en reservas. ¡Es el plan más completo para quienes no se ponen límites!',
+			precio: 6000,
+			duracionMeses: 1,
+		},
+	]);
 
-	// 3. Usuarios
 	const salt = bcrypt.genSaltSync(10);
 
 	await Usuario.create({
@@ -91,17 +102,90 @@ function sinTildes(str) {
 		}),
 	);
 
-	// Usuario de prueba
-	const socioTest = await Usuario.create({
-		nombre: 'Juan',
-		apellido: 'Tester',
-		correo: 'juan.tester@gimnasiorolling.com',
+	// Buscar los planes ya insertados por nombre
+	const planMusculacion = planes.find((p) => p.nombre === 'Plan Musculación');
+	const planClases = planes.find((p) => p.nombre === 'Plan Clases Ilimitadas');
+	const planFull = planes.find((p) => p.nombre === 'Plan Full Access');
+
+	// Usuario sin plan
+	const socioSinPlan = await Usuario.create({
+		nombre: 'Socio',
+		apellido: 'SinPlan',
+		correo: 'socio.sinplan@gimnasiorolling.com',
 		rol: 'usuario',
 		password: bcrypt.hashSync('123456', salt),
+		img: faker.image.avatar(),
+		estado: true,
+		plan: null,
 	});
-	socios.push(socioTest);
 
-	// 4. Pagos y asignación de plan
+	// Usuario con plan musculación
+	const socioMusculacion = await Usuario.create({
+		nombre: 'Socio',
+		apellido: 'Musculacion',
+		correo: 'socio.musculacion@gimnasiorolling.com',
+		rol: 'usuario',
+		password: bcrypt.hashSync('123456', salt),
+		img: faker.image.avatar(),
+		estado: true,
+		plan: planMusculacion._id,
+	});
+
+	// Usuario con plan clases
+	const socioClases = await Usuario.create({
+		nombre: 'Socio',
+		apellido: 'Clases',
+		correo: 'socio.clases@gimnasiorolling.com',
+		rol: 'usuario',
+		password: bcrypt.hashSync('123456', salt),
+		img: faker.image.avatar(),
+		estado: true,
+		plan: planClases._id,
+	});
+
+	// Usuario con plan full
+	const socioFull = await Usuario.create({
+		nombre: 'Socio',
+		apellido: 'Full',
+		correo: 'socio.full@gimnasiorolling.com',
+		rol: 'usuario',
+		password: bcrypt.hashSync('123456', salt),
+		img: faker.image.avatar(),
+		estado: true,
+		plan: planFull._id,
+	});
+
+	// Insertar pagos simulados solo para los que tienen plan
+	await Pago.insertMany([
+		{
+			usuario: socioMusculacion._id,
+			plan: planMusculacion._id,
+			monto: planMusculacion.precio,
+			status: 'approved',
+			mercadoPagoId: faker.string.alphanumeric(8),
+			captured_at: new Date(),
+		},
+		{
+			usuario: socioClases._id,
+			plan: planClases._id,
+			monto: planClases.precio,
+			status: 'approved',
+			mercadoPagoId: faker.string.alphanumeric(8),
+			captured_at: new Date(),
+		},
+		{
+			usuario: socioFull._id,
+			plan: planFull._id,
+			monto: planFull.precio,
+			status: 'approved',
+			mercadoPagoId: faker.string.alphanumeric(8),
+			captured_at: new Date(),
+		},
+	]);
+
+	// Agregarlos a la lista de socios
+	socios.push(socioSinPlan, socioMusculacion, socioClases, socioFull);
+
 	for (const socio of socios) {
 		const planAsignado = faker.helpers.arrayElement(planes);
 
@@ -115,10 +199,9 @@ function sinTildes(str) {
 		});
 
 		await Usuario.findByIdAndUpdate(socio._id, { plan: planAsignado._id });
-		socio.plan = planAsignado; // Añadir referencia al objeto usuario para filtrar luego
+		socio.plan = planAsignado;
 	}
 
-	// 5. Clases
 	const startMonth = new Date();
 	startMonth.setDate(1);
 
@@ -165,8 +248,10 @@ function sinTildes(str) {
 		}),
 	);
 
-	// 6. Asistencias solo para usuarios con plan 'clases' o 'full'
-	const sociosConClases = socios.filter((u) => ['clases', 'full'].includes(u.plan?.nombre));
+	// === ACTUALIZACIÓN DE NOMBRES DE PLAN PARA FILTRO ===
+	const sociosConClases = socios.filter((u) =>
+		['Plan Clases Ilimitadas', 'Plan Full Access'].includes(u.plan?.nombre),
+	);
 
 	await Asistencia.insertMany(
 		clases.flatMap((clase) =>
@@ -180,7 +265,6 @@ function sinTildes(str) {
 		),
 	);
 
-	// 7. Configuración
 	await Configuracion.deleteMany();
 	await Configuracion.create({
 		nombre: 'Gimnasio Rolling',

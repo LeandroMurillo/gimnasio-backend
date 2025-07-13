@@ -6,21 +6,24 @@ exports.registrarAsistencia = async (req, res) => {
 	try {
 		const { clase: claseId, usuario: usuarioId } = req.body;
 
-		// 1. Obtener clase e incluir planes permitidos
-		const clase = await Clase.findById(claseId).populate('planesPermitidos');
+		// 1. Obtener clase
+		const clase = await Clase.findById(claseId);
 		if (!clase) return res.status(404).json({ msg: 'Clase no encontrada' });
 
+		// ✅ 1.1 Verificar si la clase ya finalizó
+		const ahora = new Date();
+		if (new Date(clase.fechaFin) < ahora) {
+			return res.status(400).json({ msg: 'No puedes anotarte a una clase ya finalizada' });
+		}
+
 		// 2. Obtener usuario con su plan
-		const usuario = await Usuario.findById(usuarioId);
-		if (!usuario || !usuario.plan)
+		const usuarioConPlan = await Usuario.findById(usuarioId).populate('plan');
+		if (!usuarioConPlan || !usuarioConPlan.plan)
 			return res.status(403).json({ msg: 'El usuario no tiene un plan activo' });
 
-		// 3. Verificar si su plan está permitido
-		const planPermitido = clase.planesPermitidos.some(
-			(plan) => plan._id.toString() === usuario.plan.toString(),
-		);
-
-		if (!planPermitido) {
+		// 3. Verificar si su plan permite asistir a clases
+		const planesQuePermitenClases = ['Plan Clases Ilimitadas', 'Plan Full Access'];
+		if (!planesQuePermitenClases.includes(usuarioConPlan.plan.nombre)) {
 			return res.status(403).json({
 				msg: 'Tu plan no te permite anotarte a esta clase',
 			});

@@ -84,6 +84,11 @@ const usuarioPost = async (req = request, res = response) => {
 const usuarioPut = async (req = request, res = response) => {
 	const { id } = req.params;
 	try {
+		if (id === '68728251b003a6f29d060bf4') {
+			return res
+				.status(403)
+				.json({ error: 'No está permitido modificar al usuario administrador root' });
+		}
 		const { password, correo, ...resto } = req.body;
 		if (password) {
 			const salt = bcrypt.genSaltSync(10);
@@ -108,6 +113,11 @@ const usuarioPut = async (req = request, res = response) => {
 const usuarioDelete = async (req = request, res = response) => {
 	const { id } = req.params;
 	try {
+		if (id === '68728251b003a6f29d060bf4') {
+			return res
+				.status(403)
+				.json({ error: 'No está permitido eliminar al usuario administrador root' });
+		}
 		const updated = await Usuario.findByIdAndUpdate(id, { estado: false }, { new: true });
 		if (!updated) {
 			return res.status(404).json({ error: 'Usuario no encontrado' });

@@ -34,6 +34,7 @@ exports.obtenerClases = async (req, res) => {
 		}
 	}
 
+	// Para FullCalendar: filtrar por fechas
 	try {
 		const clases = await Clase.find({
 			fechaInicio: { $lt: new Date(end) },
@@ -80,6 +81,8 @@ exports.obtenerClasePorId = async (req, res) => {
 
 		const claseObj = clase.toObject();
 		claseObj.id = clase._id.toString();
+		delete claseObj._id;
+		delete claseObj.__v;
 
 		res.json(claseObj);
 	} catch (err) {
@@ -90,21 +93,76 @@ exports.obtenerClasePorId = async (req, res) => {
 
 exports.crearClase = async (req, res) => {
 	try {
-		const clase = new Clase(req.body);
+		const { nombre, fechaInicio, fechaFin, cupoMax } = req.body;
+
+		if (!nombre || typeof nombre !== 'string' || !nombre.trim()) {
+			return res.status(400).json({ msg: 'El nombre de la clase es obligatorio' });
+		}
+
+		if (fechaInicio && fechaFin && new Date(fechaFin) <= new Date(fechaInicio)) {
+			return res
+				.status(400)
+				.json({ msg: 'La fecha de fin debe ser posterior a la fecha de inicio' });
+		}
+
+		if (cupoMax !== undefined && (isNaN(cupoMax) || cupoMax <= 0)) {
+			return res.status(400).json({ msg: 'El cupo máximo debe ser mayor que cero' });
+		}
+
+		const clase = new Clase({
+			...req.body,
+			cupoMax: cupoMax ?? 30, // Valor por defecto
+		});
+
 		await clase.save();
-		res.status(201).json(clase);
+
+		const claseObj = clase.toObject();
+		claseObj.id = clase._id.toString();
+		delete claseObj._id;
+		delete claseObj.__v;
+
+		res.status(201).json(claseObj);
 	} catch (err) {
+		console.error('Error al crear clase:', err);
 		res.status(400).json({ msg: 'Error al crear clase', err });
 	}
 };
 
 exports.actualizarClase = async (req, res) => {
 	const { id } = req.params;
+	const { nombre, fechaInicio, fechaFin, cupoMax } = req.body;
+
+	if (!nombre || typeof nombre !== 'string' || !nombre.trim()) {
+		return res.status(400).json({ msg: 'El nombre de la clase es obligatorio' });
+	}
+
+	if (fechaInicio && fechaFin && new Date(fechaFin) <= new Date(fechaInicio)) {
+		return res.status(400).json({ msg: 'La fecha de fin debe ser posterior a la fecha de inicio' });
+	}
+
+	if (cupoMax !== undefined && (isNaN(cupoMax) || cupoMax <= 0)) {
+		return res.status(400).json({ msg: 'El cupo máximo debe ser mayor que cero' });
+	}
+
 	try {
-		const clase = await Clase.findByIdAndUpdate(id, req.body, { new: true });
-		if (!clase) return res.status(404).json({ msg: 'No existe' });
-		res.json(clase);
+		const clase = await Clase.findByIdAndUpdate(
+			id,
+			{ ...req.body, cupoMax: cupoMax ?? 30 },
+			{ new: true },
+		);
+
+		if (!clase) {
+			return res.status(404).json({ msg: 'No existe' });
+		}
+
+		const claseObj = clase.toObject();
+		claseObj.id = clase._id.toString();
+		delete claseObj._id;
+		delete claseObj.__v;
+
+		res.json(claseObj);
 	} catch (err) {
+		console.error('Error al actualizar clase:', err);
 		res.status(400).json(err);
 	}
 };
@@ -115,6 +173,7 @@ exports.eliminarClase = async (req, res) => {
 		await Asistencia.deleteMany({ clase: req.params.id });
 		res.status(204).end();
 	} catch (err) {
+		console.error('Error al eliminar clase:', err);
 		res.status(400).json({ msg: 'Error al eliminar clase', err });
 	}
 };
