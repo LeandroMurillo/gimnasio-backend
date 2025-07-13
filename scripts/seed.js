@@ -267,6 +267,7 @@ function sinTildes(str) {
 
 	await Configuracion.deleteMany();
 	await Configuracion.create({
+		_id: 'default',
 		nombre: 'Gimnasio Rolling',
 		direccion: 'Av. Fitness 123',
 		ciudad: 'San Miguel de Tucumán',

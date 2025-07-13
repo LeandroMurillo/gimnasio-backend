@@ -3,7 +3,7 @@ const { obtenerConfiguracion, actualizarConfiguracion } = require('../controller
 
 const router = Router();
 
-router.get('/', obtenerConfiguracion);
+router.get('/:id', obtenerConfiguracion); // id = 'default'
 router.put('/:id', actualizarConfiguracion);
 
 module.exports = router;

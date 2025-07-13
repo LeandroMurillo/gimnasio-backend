@@ -1,6 +1,7 @@
 const { Schema, model } = require('mongoose');
 
 const ConfiguracionSchema = new Schema({
+	_id: { type: String, default: 'default' }, // ✅ importante
 	nombre: String,
 	direccion: String,
 	ciudad: String,
@@ -16,4 +17,4 @@ const ConfiguracionSchema = new Schema({
 	},
 });
 
-module.exports = model('Configuracion', ConfiguracionSchema);
+module.exports = model('Configuracion', ConfiguracionSchema, 'configuracion');
