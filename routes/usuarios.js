@@ -9,7 +9,6 @@ const {
 } = require('../controllers/usuarios');
 
 const { emailExiste, usuarioExiste } = require('../helpers/db-validators');
-
 const { validarCampos } = require('../middlewares/validarCampos');
 
 const router = Router();
@@ -27,8 +26,9 @@ router.post(
 	[
 		check('nombre', 'El nombre es obligatorio').notEmpty(),
 		check('apellido', 'El apellido es obligatorio').notEmpty(),
+		check('telefono', 'El teléfono es obligatorio').notEmpty(),
 		check('correo').custom(emailExiste),
-		check('password', 'La contraseña debe tener un mínmo de 6 caracteres').isLength({ min: 6 }),
+		check('password', 'La contraseña debe tener un mínimo de 6 caracteres').isLength({ min: 6 }),
 		validarCampos,
 	],
 	usuarioPost,

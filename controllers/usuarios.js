@@ -56,17 +56,21 @@ const usuarioGetID = async (req = request, res = response) => {
 
 const usuarioPost = async (req = request, res = response) => {
 	try {
-		const { nombre, apellido, correo, password, rol, estado = true } = req.body;
+		const { nombre, apellido, correo, telefono, password, rol, estado = true } = req.body;
 		const errors = {};
+
 		if (!nombre) errors.nombre = ['El nombre es obligatorio'];
 		if (!apellido) errors.apellido = ['El apellido es obligatorio'];
 		if (!correo) errors.correo = ['El correo es obligatorio'];
+		if (!telefono) errors.telefono = ['El teléfono es obligatorio'];
 		if (!password) errors.password = ['La contraseña es obligatoria'];
 		if (!rol) errors.rol = ['El rol es obligatorio'];
+
 		if (Object.keys(errors).length) {
 			return res.status(400).json({ errors });
 		}
-		const usuario = new Usuario({ nombre, apellido, correo, password, rol, estado });
+
+		const usuario = new Usuario({ nombre, apellido, correo, telefono, password, rol, estado });
 		const salt = bcrypt.genSaltSync(10);
 		usuario.password = bcrypt.hashSync(password, salt);
 		const saved = await usuario.save();
@@ -90,15 +94,20 @@ const usuarioPut = async (req = request, res = response) => {
 				.json({ error: 'No está permitido modificar al usuario administrador root' });
 		}
 		const { password, correo, ...resto } = req.body;
+
 		if (password) {
 			const salt = bcrypt.genSaltSync(10);
 			resto.password = bcrypt.hashSync(password, salt);
 		}
+
 		resto.correo = correo;
+
 		const updated = await Usuario.findByIdAndUpdate(id, resto, { new: true });
+
 		if (!updated) {
 			return res.status(404).json({ error: 'Usuario no encontrado' });
 		}
+
 		const userObj = updated.toObject();
 		userObj.id = userObj._id;
 		delete userObj._id;
@@ -119,9 +128,11 @@ const usuarioDelete = async (req = request, res = response) => {
 				.json({ error: 'No está permitido eliminar al usuario administrador root' });
 		}
 		const updated = await Usuario.findByIdAndUpdate(id, { estado: false }, { new: true });
+
 		if (!updated) {
 			return res.status(404).json({ error: 'Usuario no encontrado' });
 		}
+
 		const userObj = updated.toObject();
 		userObj.id = userObj._id;
 		delete userObj._id;

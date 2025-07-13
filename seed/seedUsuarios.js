@@ -13,11 +13,19 @@ function sinTildes(str) {
 module.exports = async function seedUsuarios(USERS_TOTAL, INSTRUCTORES_TOT, planes) {
 	const salt = bcrypt.genSaltSync(10);
 
+	// Función para generar un número de teléfono válido
+	const generarTelefonoValido = () => {
+		const codigoPais = '+54 9 11'; // Código de país y área para Argentina
+		const numero = Math.floor(10000000 + Math.random() * 90000000); // Generar 8 dígitos aleatorios
+		return `${codigoPais}${numero}`.replace(/\s+/g, ''); // Eliminar los espacios
+	};
+
 	// Crear admin
 	await Usuario.create({
 		nombre: 'Admin',
 		apellido: 'Root',
 		correo: 'admin@gimnasiorolling.com',
+		telefono: generarTelefonoValido(),
 		rol: 'admin',
 		password: bcrypt.hashSync('123456', salt),
 	});
@@ -33,6 +41,7 @@ module.exports = async function seedUsuarios(USERS_TOTAL, INSTRUCTORES_TOT, plan
 				nombre: nombres,
 				apellido: apellidos,
 				correo: `${nomKey}.${apeKey}@gimnasiorolling.com`,
+				telefono: generarTelefonoValido(),
 				rol: 'instructor',
 				password: bcrypt.hashSync('123456', salt),
 			};
@@ -50,6 +59,7 @@ module.exports = async function seedUsuarios(USERS_TOTAL, INSTRUCTORES_TOT, plan
 				nombre: nombres,
 				apellido: apellidos,
 				correo: `${nomKey}.${apeKey}@gimnasiorolling.com`,
+				telefono: generarTelefonoValido(),
 				rol: 'usuario',
 				password: bcrypt.hashSync('123456', salt),
 			};
@@ -68,6 +78,7 @@ module.exports = async function seedUsuarios(USERS_TOTAL, INSTRUCTORES_TOT, plan
 			nombre: 'Socio',
 			apellido: 'SinPlan',
 			correo: 'socio.sinplan@gimnasiorolling.com',
+			telefono: generarTelefonoValido(),
 			rol: 'usuario',
 			password: bcrypt.hashSync('123456', salt),
 			img: faker.image.avatar(),
@@ -78,6 +89,7 @@ module.exports = async function seedUsuarios(USERS_TOTAL, INSTRUCTORES_TOT, plan
 			nombre: 'Socio',
 			apellido: 'Musculacion',
 			correo: 'socio.musculacion@gimnasiorolling.com',
+			telefono: generarTelefonoValido(),
 			rol: 'usuario',
 			password: bcrypt.hashSync('123456', salt),
 			img: faker.image.avatar(),
@@ -88,6 +100,7 @@ module.exports = async function seedUsuarios(USERS_TOTAL, INSTRUCTORES_TOT, plan
 			nombre: 'Socio',
 			apellido: 'Clases',
 			correo: 'socio.clases@gimnasiorolling.com',
+			telefono: generarTelefonoValido(),
 			rol: 'usuario',
 			password: bcrypt.hashSync('123456', salt),
 			img: faker.image.avatar(),
@@ -98,6 +111,7 @@ module.exports = async function seedUsuarios(USERS_TOTAL, INSTRUCTORES_TOT, plan
 			nombre: 'Socio',
 			apellido: 'Full',
 			correo: 'socio.full@gimnasiorolling.com',
+			telefono: generarTelefonoValido(),
 			rol: 'usuario',
 			password: bcrypt.hashSync('123456', salt),
 			img: faker.image.avatar(),
