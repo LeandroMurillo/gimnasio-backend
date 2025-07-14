@@ -6,7 +6,7 @@ const {
 	usuarioPost,
 	usuarioDelete,
 	usuarioPut,
-	obtenerInstructores, // Importamos el controlador para obtener instructores
+	obtenerInstructores,
 } = require('../controllers/usuarios');
 
 const { emailExiste, usuarioExiste } = require('../helpers/db-validators');
@@ -14,10 +14,8 @@ const { validarCampos } = require('../middlewares/validarCampos');
 
 const router = Router();
 
-// Primero definimos la ruta específica para obtener instructores
-router.get('/instructores', obtenerInstructores); // Aquí agregamos la ruta para obtener instructores
+router.get('/instructores', obtenerInstructores);
 
-// Luego las rutas con :id, ya que son rutas dinámicas
 router.get('/', usuarioGet);
 
 router.get(

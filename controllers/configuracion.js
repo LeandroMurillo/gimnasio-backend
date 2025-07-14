@@ -1,6 +1,5 @@
 const Configuracion = require('../models/configuracion');
 
-// Obtener configuración
 const obtenerConfiguracion = async (req, res) => {
 	try {
 		const config = await Configuracion.findById('default');
@@ -14,7 +13,6 @@ const obtenerConfiguracion = async (req, res) => {
 	}
 };
 
-// Actualizar configuración
 const actualizarConfiguracion = async (req, res) => {
 	try {
 		const data = req.body;

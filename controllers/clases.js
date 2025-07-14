@@ -5,68 +5,64 @@ const Usuario = require('../models/usuarios');
 const Plan = require('../models/planes');
 
 exports.obtenerClases = async (req, res) => {
-	const { start, end, _start, _end } = req.query;
+	const { start, end } = req.query;
 
-	if (!start || !end) {
+	// Si viene del calendario (con filtros de fechas)
+	if (start && end) {
 		try {
-			const startIdx = parseInt(_start) || 0;
-			const endIdx = parseInt(_end) || 10;
-
-			const total = await Clase.countDocuments();
-			const clases = await Clase.find()
-				.skip(startIdx)
-				.limit(endIdx - startIdx)
+			const clases = await Clase.find({
+				fechaInicio: { $lt: new Date(end) },
+				fechaFin: { $gt: new Date(start) },
+			})
 				.populate('instructor', 'nombre apellido')
 				.lean();
 
-			const clasesConId = clases.map((clase) => ({
-				...clase,
-				id: clase._id.toString(),
+			const counts = await Asistencia.aggregate([
+				{ $match: { clase: { $in: clases.map((c) => c._id) } } },
+				{ $group: { _id: '$clase', total: { $sum: 1 } } },
+			]);
+
+			const countMap = Object.fromEntries(counts.map((c) => [c._id.toString(), c.total]));
+
+			const eventos = clases.map((c) => ({
+				id: c._id.toString(),
+				title: c.nombre,
+				start: c.fechaInicio,
+				end: c.fechaFin,
+				backgroundColor: c.color ?? '#0d6efd',
+				extendedProps: {
+					cupoMax: c.cupoMax,
+					asistentes: countMap[c._id.toString()] ?? 0,
+					instructor: c.instructor,
+				},
 			}));
 
-			res.set('Content-Range', `clases ${startIdx}-${endIdx - 1}/${total}`);
-			res.set('Access-Control-Expose-Headers', 'Content-Range');
-
-			return res.json(clasesConId);
+			return res.json(eventos);
 		} catch (error) {
-			console.error('Error al obtener clases:', error);
-			return res.status(500).json({ msg: 'Error interno al obtener clases' });
+			console.error('Error al obtener clases filtradas:', error);
+			return res.status(500).json({ msg: 'Error al obtener clases con fechas' });
 		}
 	}
 
-	// Para FullCalendar: filtrar por fechas
+	// Si viene desde React-Admin: sin paginación, ordenadas por fechaInicio descendente
 	try {
-		const clases = await Clase.find({
-			fechaInicio: { $lt: new Date(end) },
-			fechaFin: { $gt: new Date(start) },
-		})
+		const clases = await Clase.find()
+			.sort({ fechaInicio: -1 }) // más reciente primero
 			.populate('instructor', 'nombre apellido')
 			.lean();
 
-		const counts = await Asistencia.aggregate([
-			{ $match: { clase: { $in: clases.map((c) => c._id) } } },
-			{ $group: { _id: '$clase', total: { $sum: 1 } } },
-		]);
-
-		const countMap = Object.fromEntries(counts.map((c) => [c._id.toString(), c.total]));
-
-		const eventos = clases.map((c) => ({
-			id: c._id.toString(),
-			title: c.nombre,
-			start: c.fechaInicio,
-			end: c.fechaFin,
-			backgroundColor: c.color ?? '#0d6efd',
-			extendedProps: {
-				cupoMax: c.cupoMax,
-				asistentes: countMap[c._id.toString()] ?? 0,
-				instructor: c.instructor,
-			},
+		const clasesConId = clases.map((clase) => ({
+			...clase,
+			id: clase._id.toString(),
 		}));
 
-		res.json(eventos);
+		res.set('Content-Range', `clases 0-${clasesConId.length - 1}/${clasesConId.length}`);
+		res.set('Access-Control-Expose-Headers', 'Content-Range');
+
+		return res.json(clasesConId);
 	} catch (error) {
-		console.error('Error al obtener clases filtradas:', error);
-		return res.status(500).json({ msg: 'Error al obtener clases con fechas' });
+		console.error('Error al obtener clases:', error);
+		return res.status(500).json({ msg: 'Error interno al obtener clases' });
 	}
 };
 
@@ -111,7 +107,7 @@ exports.crearClase = async (req, res) => {
 
 		const clase = new Clase({
 			...req.body,
-			cupoMax: cupoMax ?? 30, // Valor por defecto
+			cupoMax: cupoMax ?? 30,
 		});
 
 		await clase.save();
@@ -169,7 +165,10 @@ exports.actualizarClase = async (req, res) => {
 
 exports.eliminarClase = async (req, res) => {
 	try {
-		await Clase.findByIdAndDelete(req.params.id);
+		const clase = await Clase.findByIdAndDelete(req.params.id);
+		if (!clase) {
+			return res.status(404).json({ msg: 'Clase no encontrada' });
+		}
 		await Asistencia.deleteMany({ clase: req.params.id });
 		res.status(204).end();
 	} catch (err) {

@@ -3,7 +3,6 @@ const jwt = require('jsonwebtoken');
 const Usuario = require('../models/usuarios');
 
 const validarJWT = async (req = request, res = response, next) => {
-	// Tomar el token desde el header estándar Authorization
 	const authHeader = req.header('Authorization');
 	const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
 

@@ -6,11 +6,10 @@ exports.registrarAsistencia = async (req, res) => {
 	try {
 		const { clase: claseId, usuario: usuarioId } = req.body;
 
-		// 1. Obtener clase
 		const clase = await Clase.findById(claseId);
 		if (!clase) return res.status(404).json({ msg: 'Clase no encontrada' });
 
-		// ✅ 1.1 Verificar si la clase ya finalizó
+		// 1. Verificar si la clase ya finalizó
 		const ahora = new Date();
 		if (new Date(clase.fechaFin) < ahora) {
 			return res.status(400).json({ msg: 'No puedes anotarte a una clase ya finalizada' });

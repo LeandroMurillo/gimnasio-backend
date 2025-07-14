@@ -144,13 +144,10 @@ const usuarioDelete = async (req = request, res = response) => {
 	}
 };
 
-// Nueva función para obtener instructores
 const obtenerInstructores = async (req = request, res = response) => {
 	try {
-		// Filtrar por rol 'instructor'
 		const instructores = await Usuario.find({ rol: 'instructor', estado: true });
 
-		// Mapear los instructores y eliminar campos innecesarios
 		const instructoresList = instructores.map((instructor) => {
 			const obj = instructor.toObject();
 			obj.id = obj._id;
@@ -172,5 +169,5 @@ module.exports = {
 	usuarioPost,
 	usuarioPut,
 	usuarioDelete,
-	obtenerInstructores, // Aseguramos que esté exportado
+	obtenerInstructores,
 };

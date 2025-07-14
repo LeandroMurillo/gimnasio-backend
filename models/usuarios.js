@@ -44,7 +44,7 @@ const UsuarioSchema = new Schema({
 	rol: {
 		type: String,
 		required: [true, 'El rol es obligatorio'],
-		enum: ['admin', 'usuario', 'instructor'], // Aseguramos que solo se puedan usar estos valores
+		enum: ['admin', 'usuario', 'instructor'],
 	},
 	fechaRegistro: {
 		type: Date,

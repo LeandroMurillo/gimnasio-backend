@@ -3,8 +3,8 @@ const { obtenerMensajes, crearMensaje, borrarMensaje } = require('../controllers
 
 const router = Router();
 
-router.get('/', obtenerMensajes);        // Para admin
-router.post('/', crearMensaje);          // Desde frontend
-router.delete('/:id', borrarMensaje);    // Para react-admin opcional
+router.get('/', obtenerMensajes);
+router.post('/', crearMensaje);
+router.delete('/:id', borrarMensaje);
 
 module.exports = router;

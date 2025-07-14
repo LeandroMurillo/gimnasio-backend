@@ -1,6 +1,6 @@
 const { MercadoPagoConfig, Preference } = require('mercadopago');
 const Pago = require('../models/pagos');
-const Usuario = require('../models/usuarios'); // ✅ Importar modelo de Usuario
+const Usuario = require('../models/usuarios');
 const { FRONTEND_URL } = process.env;
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -12,8 +12,6 @@ const crearPreferencia = async (req, res) => {
 	try {
 		const { titulo, precio, planId } = req.body;
 		const usuarioId = req.usuario._id;
-
-		console.log('📦 Body recibido en crearPreferencia:', req.body);
 
 		const preference = {
 			items: [
@@ -35,11 +33,7 @@ const crearPreferencia = async (req, res) => {
 			},
 		};
 
-		console.log('⚙️ Enviando preferencia a MercadoPago:', preference);
-
 		const { id } = await new Preference(mercadopago).create({ body: preference });
-
-		console.log('✅ Preferencia creada con ID:', id);
 
 		return res.json({ id });
 	} catch (error) {
@@ -53,10 +47,6 @@ const registrarPago = async (req, res) => {
 		const { mercadoPagoId, planId, monto, status, captured_at } = req.body;
 		const usuarioId = req.usuario._id;
 
-		console.log('✅ Endpoint /api/pagos alcanzado');
-		console.log('📦 Body recibido:', req.body);
-		console.log('👤 Usuario autenticado:', usuarioId);
-
 		const nuevoPago = new Pago({
 			mercadoPagoId,
 			usuario: usuarioId,
@@ -68,7 +58,7 @@ const registrarPago = async (req, res) => {
 
 		await nuevoPago.save();
 
-		// ✅ Asignar el plan al usuario después del pago
+		// Asignar el plan al usuario después del pago
 		await Usuario.findByIdAndUpdate(usuarioId, { plan: planId });
 
 		res.status(201).json({ msg: 'Pago registrado y plan asignado correctamente' });

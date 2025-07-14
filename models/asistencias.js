@@ -6,6 +6,6 @@ const AsistenciaSchema = new Schema({
 	fecha: { type: Date, default: Date.now },
 });
 
-AsistenciaSchema.index({ clase: 1, usuario: 1 }, { unique: true }); // evita duplicados
+AsistenciaSchema.index({ clase: 1, usuario: 1 }, { unique: true });
 
 module.exports = model('Asistencia', AsistenciaSchema);

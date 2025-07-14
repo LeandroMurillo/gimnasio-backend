@@ -1,7 +1,7 @@
 const { Schema, model } = require('mongoose');
 
 const ConfiguracionSchema = new Schema({
-	_id: { type: String, default: 'default' }, // ✅ importante
+	_id: { type: String, default: 'default' },
 	nombre: String,
 	direccion: String,
 	ciudad: String,

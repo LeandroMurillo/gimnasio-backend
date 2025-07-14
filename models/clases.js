@@ -27,7 +27,6 @@ const ClaseSchema = new Schema(
 			required: true,
 			validate: {
 				validator: function (value) {
-					// Solo se valida si ambas fechas están presentes
 					return !this.fechaInicio || value > this.fechaInicio;
 				},
 				message: 'La fecha de fin debe ser posterior a la fecha de inicio',
