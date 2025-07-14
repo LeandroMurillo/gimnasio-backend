@@ -1,6 +1,7 @@
 const { MercadoPagoConfig, Preference } = require('mercadopago');
 const Pago = require('../models/pagos');
 const Usuario = require('../models/usuarios');
+const Plan = require('../models/planes');
 const { FRONTEND_URL } = process.env;
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -8,6 +9,9 @@ const mercadopago = new MercadoPagoConfig({
 	accessToken: process.env.MP_ACCESS_TOKEN,
 });
 
+/**
+ * Crear una preferencia de pago con Mercado Pago
+ */
 const crearPreferencia = async (req, res) => {
 	try {
 		const { titulo, precio, planId } = req.body;
@@ -31,6 +35,7 @@ const crearPreferencia = async (req, res) => {
 				usuarioId,
 				planId,
 			},
+			external_reference: JSON.stringify({ planId }),
 		};
 
 		const { id } = await new Preference(mercadopago).create({ body: preference });
@@ -42,11 +47,32 @@ const crearPreferencia = async (req, res) => {
 	}
 };
 
+/**
+ * Registrar el pago recibido en el frontend
+ */
 const registrarPago = async (req, res) => {
 	try {
 		const { mercadoPagoId, planId, monto, status, captured_at } = req.body;
 		const usuarioId = req.usuario._id;
 
+		// Validación básica
+		if (!mercadoPagoId || !planId || !monto || !status || !captured_at) {
+			return res.status(400).json({ error: 'Faltan datos obligatorios del pago' });
+		}
+
+		// Verificar si el plan existe
+		const plan = await Plan.findById(planId);
+		if (!plan) {
+			return res.status(404).json({ error: 'Plan no encontrado' });
+		}
+
+		// Verificar si ya se registró un pago con ese mercadoPagoId
+		const pagoExistente = await Pago.findOne({ mercadoPagoId });
+		if (pagoExistente) {
+			return res.status(400).json({ error: 'Este pago ya fue registrado' });
+		}
+
+		// Crear nuevo registro de pago
 		const nuevoPago = new Pago({
 			mercadoPagoId,
 			usuario: usuarioId,
@@ -61,10 +87,10 @@ const registrarPago = async (req, res) => {
 		// Asignar el plan al usuario después del pago
 		await Usuario.findByIdAndUpdate(usuarioId, { plan: planId });
 
-		res.status(201).json({ msg: 'Pago registrado y plan asignado correctamente' });
+		return res.status(201).json({ msg: 'Pago registrado y plan asignado correctamente' });
 	} catch (error) {
 		console.error('❌ Error al registrar pago:', error);
-		res.status(500).json({ error: 'Error al registrar el pago' });
+		return res.status(500).json({ error: 'Error al registrar el pago' });
 	}
 };
 
